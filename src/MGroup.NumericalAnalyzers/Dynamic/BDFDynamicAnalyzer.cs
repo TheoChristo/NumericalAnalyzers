@@ -49,6 +49,7 @@ namespace MGroup.NumericalAnalyzers.Dynamic
 		private DateTime start, end;
 		private int currentStep;
 		private GenericAnalyzerState currentState;
+		private int lastUpdatedStep = -1;
 
 		/// <summary>
 		/// Creates an instance that uses a specific problem type and an appropriate child analyzer for the construction of the system of equations arising from the actual physical problem
@@ -101,11 +102,11 @@ namespace MGroup.NumericalAnalyzers.Dynamic
 				currentState = value;
 				currentStep = (int)currentState.StateValues[CURRENTTIMESTEP];
 				currentState.StateVectors[CURRENTSOLUTION].CheckForCompatibility = false;
-				currentState.StateVectors[SOLUTION_N_1].CheckForCompatibility = false;
-				currentState.StateVectors[SOLUTION_N_2].CheckForCompatibility = false;
-				currentState.StateVectors[SOLUTION_N_3].CheckForCompatibility = false;
-				currentState.StateVectors[SOLUTION_N_4].CheckForCompatibility = false;
-				currentState.StateVectors[SOLUTION_N_5].CheckForCompatibility = false;
+				if (solutionOfPreviousStep.Length > 0) currentState.StateVectors[SOLUTION_N_1].CheckForCompatibility = false;
+				if (solutionOfPreviousStep.Length > 1) currentState.StateVectors[SOLUTION_N_2].CheckForCompatibility = false;
+				if (solutionOfPreviousStep.Length > 2) currentState.StateVectors[SOLUTION_N_3].CheckForCompatibility = false;
+				if (solutionOfPreviousStep.Length > 3) currentState.StateVectors[SOLUTION_N_4].CheckForCompatibility = false;
+				if (solutionOfPreviousStep.Length > 4) currentState.StateVectors[SOLUTION_N_5].CheckForCompatibility = false;
 				currentState.StateVectors[FIRSTORDERSOLUTION].CheckForCompatibility = false;
 				
 				solution.CopyFrom(currentState.StateVectors[CURRENTSOLUTION]);
@@ -131,11 +132,11 @@ namespace MGroup.NumericalAnalyzers.Dynamic
 				firstOrderDerivativeOfSolution.CopyFrom(currentState.StateVectors[FIRSTORDERSOLUTION]);
 				
 				currentState.StateVectors[CURRENTSOLUTION].CheckForCompatibility = true;
-				currentState.StateVectors[SOLUTION_N_1].CheckForCompatibility = true;
-				currentState.StateVectors[SOLUTION_N_2].CheckForCompatibility = true;
-				currentState.StateVectors[SOLUTION_N_3].CheckForCompatibility = true;
-				currentState.StateVectors[SOLUTION_N_4].CheckForCompatibility = true;
-				currentState.StateVectors[SOLUTION_N_5].CheckForCompatibility = true;
+				if (solutionOfPreviousStep.Length > 0) currentState.StateVectors[SOLUTION_N_1].CheckForCompatibility = true;
+				if (solutionOfPreviousStep.Length > 1) currentState.StateVectors[SOLUTION_N_2].CheckForCompatibility = true;
+				if (solutionOfPreviousStep.Length > 2) currentState.StateVectors[SOLUTION_N_3].CheckForCompatibility = true;
+				if (solutionOfPreviousStep.Length > 3) currentState.StateVectors[SOLUTION_N_4].CheckForCompatibility = true;
+				if (solutionOfPreviousStep.Length > 4) currentState.StateVectors[SOLUTION_N_5].CheckForCompatibility = true;
 				currentState.StateVectors[FIRSTORDERSOLUTION].CheckForCompatibility = true;
 			}
 		}
@@ -157,7 +158,6 @@ namespace MGroup.NumericalAnalyzers.Dynamic
 				{
 					(CURRENTTIMESTEP, (double)currentStep),
 				});
-
 			return currentState;
 		}
 
@@ -333,7 +333,8 @@ namespace MGroup.NumericalAnalyzers.Dynamic
 				default: throw new ArgumentException("Wrong BDF Order");
 			}
 
-			var solutionTerm = solver.LinearSystem.Solution.Scale(rhsFactors[0]);
+			//var solutionTerm = solver.LinearSystem.Solution.Scale(rhsFactors[0]);
+			var solutionTerm = solution.Scale(rhsFactors[0]);
 			for (int bdfTerm = 1; bdfTerm < bdfOrderInternal; bdfTerm++)
 			{
 				solutionTerm.AddIntoThis(solutionOfPreviousStep[bdfTerm - 1].Scale(rhsFactors[bdfTerm]));
