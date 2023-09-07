@@ -73,35 +73,57 @@ namespace MGroup.NumericalAnalyzers.Staggered
 		protected virtual void Solve(Func<Action[]> solveMethods)
 		{
 			int staggeredStep = 0;
-			var solutionNorm = 0d;
-			double previousSolutionNorm, error;
-
+			//var solutionNorm = 0d;
+			//double previousSolutionNorm;
+			double error = 1;
+			IGlobalVector[] correction = new IGlobalVector[solvers.Length];
 			do
 			{
 				Debug.WriteLine("\n\nStaggered step: {0}", staggeredStep);
-				previousSolutionNorm = solutionNorm;
+				//previousSolutionNorm = solutionNorm;
 				var currentStatistics = new IList<IterativeStatistics>[analyzers.Length];
 
 				for (int i = 0; i < solvers.Length; i++)
 				{
-					if (solvers[i].LinearSystem.Solution != null)
-					{
-						currentSolutions[i] = solvers[i].LinearSystem.Solution.Copy();
-					}
-
 					solveMethods()[i]();
 
 					currentStatistics[i] = analyzers[i].AnalysisStatistics.ToArray();
+
+					if (currentSolutions[i] != null)
+					{
+						currentSolutions[i].CheckForCompatibility = false;
+						correction[i] = analyzers[i].ChildAnalyzer.CurrentAnalysisResult.Subtract(currentSolutions[i]);
+						currentSolutions[i].CheckForCompatibility = true;
+					}
+					else
+					{
+						correction[i] = analyzers[i].ChildAnalyzer.CurrentAnalysisResult.CreateZero();
+						correction[i].SetAll(1);
+					}
+
+					currentSolutions[i] = analyzers[i].ChildAnalyzer.CurrentAnalysisResult.Copy();
 				}
 
 				nestedAnalysisStatistics.Add(currentStatistics);
-				solutionNorm = 0;
+
+				error = 0;
+				double solutionNorm = 0;
 				for (int i = 0; i < solvers.Length; i++)
 				{
-					solutionNorm += solvers[i].LinearSystem.Solution.Norm2();
+					var dot = correction[i].DotProduct(correction[i]);
+					if (dot > error)
+					{
+						error = dot;
+						solutionNorm = currentSolutions[i].DotProduct(currentSolutions[i]);
+					}
+
+					//error += correction[i].DotProduct(correction[i]);
+					//solutionNorm += currentSolutions[i].DotProduct(currentSolutions[i]);
 				}
 
-				error = solutionNorm != 0 ? Math.Abs(solutionNorm - previousSolutionNorm) / solutionNorm : 0;
+				//error = Math.Sqrt(error);
+				error = solutionNorm != 0 ? Math.Sqrt(error) / Math.Sqrt(solutionNorm) : Math.Sqrt(error);
+
 				Debug.WriteLine("Staggered step: {0} - error {1}", staggeredStep, error);
 				staggeredStep++;
 
