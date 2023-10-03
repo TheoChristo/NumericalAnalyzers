@@ -8,6 +8,7 @@ using MGroup.MSolve.AnalysisWorkflow.Logging;
 using MGroup.MSolve.Solution.AlgebraicModel;
 using MGroup.MSolve.DataStructures;
 using MGroup.LinearAlgebra.Iterative;
+using System.Diagnostics;
 
 namespace MGroup.NumericalAnalyzers.NonLinear
 {
@@ -250,6 +251,7 @@ namespace MGroup.NumericalAnalyzers.NonLinear
 		protected void UpdateInternalVectors()
 		{
 			rhsIncrement = solver.LinearSystem.RhsVector.Subtract(lastRhs);
+			Debug.WriteLine("RHStoSplitInIncrements  {0}", rhsIncrement.Norm2());
 			rhsIncrement.ScaleIntoThis(1 / (double)numIncrements);
 			globalRhsNormInitial = provider.CalculateRhsNorm(solver.LinearSystem.RhsVector);
 		}

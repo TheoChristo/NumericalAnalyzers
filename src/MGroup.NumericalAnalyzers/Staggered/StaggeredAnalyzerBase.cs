@@ -13,8 +13,8 @@ using MGroup.MSolve.Solution.LinearSystem;
 
 namespace MGroup.NumericalAnalyzers.Staggered
 {
-	public delegate void CreateNewModelDelegate(IParentAnalyzer[] analyzers, ISolver[] solvers); 
-	
+	public delegate void CreateNewModelDelegate(IParentAnalyzer[] analyzers, ISolver[] solvers);
+
 	public abstract class StaggeredAnalyzerBase : IAnalyzer
 	{
 		protected int maxStaggeredSteps;
